@@ -138,5 +138,6 @@ def main():
     write_result(regions, "small.out")
 
 
+
 if __name__ == "__main__":
     main()
