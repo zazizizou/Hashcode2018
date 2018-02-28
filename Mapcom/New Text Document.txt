@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include<string.h>
+#define MAX 2600
+char f[1001][MAX]={"1"};
+char n[MAX]="1";
+void multiply(int k){
+     char tampon[MAX];
+     int l=strlen(n);
+     for(int i=0;i<l;i++)
+      tampon[i]=n[l-i-1];
+      tampon[l]=0;
+      int rest=0;
+      int i;
+      for( i=0;i<l;i++)
+      {int x=k*(tampon[i]-'0')+rest;
+      rest=x/10;
+      tampon[i]=x%10+'0';
+      }
+      while(rest!=0)
+        {tampon[i++]=rest%10+'0';
+        rest/=10;
+        }
+     tampon[i]=0;
+     int L=strlen(tampon);
+     for(i=0;i<L;i++) n[i]=tampon[L-i-1];
+     n[L]=0;
+
+     }
+     int main(){
+         int k;
+         for(int i=1;i<=1000;i++){
+          multiply(i);
+          strcpy(f[i],n);
+
+         }
+
+         while(1){
+          printf("entrer le nombre que vous vouler savoir son factoriel (0 pour sortir du choix):\n");
+          scanf("%d",&k);
+          if(k == 0) break;
+          printf("%d!\n",k);
+          puts(f[k]);
+          }
+
+          return 0;
+         }
+		 
+		 
+		 
+		 
+		 
+string ord_nombre(string nombre){
+
+    string nombre_final;
+
+    bool yaEchange=true;
+
+    while(yaEchange){
+        yaEchange=false;
+        for(size_t i=0; i<nombre.size()-1; i++){
+            if(nombre[i]>nombre[i+1]){
+                yaEchange=true;
+                char temp = nombre.at(i);
+                nombre[i]=nombre[i+1];
+                nombre[i+1]=temp;
+            }
+        }
+    }
+
+    for(size_t i=0; i<nombre.size(); i++){
+        if(nombre.at(i)!='0' && nombre.at(i)!='.'){
+            nombre_final.push_back(nombre.at(i));
+        }
+    }
+
+    return nombre_final;
+}
