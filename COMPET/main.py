@@ -44,31 +44,48 @@ class Car:
         self.status = "WAITING"
 
     def go_to_client(self):
-        if self.pos_x < self.ax:
+        if self.pos_x - self.ax > 0:
+            self.pos_x -= 1
+            self.status = "GOING_TO_CLIENT"
+        elif self.pos_x - self.ax < 0:
             self.pos_x += 1
             self.status = "GOING_TO_CLIENT"
-        elif self.pos_y < self.ay:
+        elif self.pos_y - self.ay < 0:
             self.pos_y += 1
             self.status = "GOING_TO_CLIENT"
-        if self.pos_x == self.ax and self.pos_y == self.ay:
-            self.status = "ARRIVED!"
-
-    def go_to_destination(self):
-        if self.pos_x < self.bx and global_time >= self.t_start:
-            self.pos_x += 1
+        elif self.pos_y - self.ay > 0:
+            self.pos_y -= 1
             self.status = "GOING_TO_CLIENT"
-        elif self.pos_y < self.by and global_time >= self.t_start:
-            self.pos_y += 1
-            self.status = "GOING_TO_CLIENT"
-        if self.pos_x == self.bx and self.pos_y == self.by:
-            self.status = "ARRIVED!"
 
-    def step(self):
+        elif self.pos_x == self.ax and self.pos_y == self.ay:
+            self.status = "ARRIVED_TO_CLIENT"
+
+    def go_to_destination(self, global_time):
+        if global_time >= self.t_start:
+            if self.pos_x - self.bx < 0:
+                self.pos_x += 1
+                self.status = "GOING_TO_DESTINATION"
+            elif self.pos_x - self.bx > 0:
+                self.pos_x -= 1
+                self.status = "GOING_TO_DESTINATION"
+            elif self.pos_y - self.by < 0:
+                self.pos_y += 1
+                self.status = "GOING_TO_DESTINATION"
+            elif self.pos_y - self.by > 0:
+                self.pos_y -= 1
+                self.status = "GOING_TO_DESTINATION"
+
+            elif self.pos_x == self.bx and self.pos_y == self.by:
+              self.status = "ARRIVED!"
+
+    def step(self, global_time):
 
         if self.status == "WAITING":
             self.go_to_client()
-        elif self.status == "TAKING_CLIENT":
-            self.go_to_destination()
+        elif self.status == "ARRIVED_TO_CLIENT":
+            self.go_to_destination(global_time)
+        elif self.status == "GOING_TO_DESTINATION":
+            self.go_to_destination(global_time)
         elif self.status == "GOING_TO_CLIENT":
             self.go_to_client()
 
@@ -85,40 +102,42 @@ def write_assignments(filename, assignments):
 
 def main():
 
-    global_time = 0
+    data = ["a_example.in",
+            "b_should_be_easy.in",
+            "c_no_hurry.in",
+            "d_metropolis.in",
+            "e_high_bonus.in"]
 
-    dataset_file = "a_example.in"
-    (rows, columns, nb_cars, nb_rides, bonus_per_ride, nb_sim_steps), rides = read_rides(dataset_file)
-    all_cars = [Car(ride, bonus_per_ride) for ride in rides]
+    for dataset_file in data:
+        (rows, columns, nb_cars, nb_rides, bonus_per_ride, nb_sim_steps), rides = read_rides(dataset_file)
 
-    print((rows, columns, nb_cars, nb_rides, bonus_per_ride, nb_sim_steps))
-    print("rides:", [r for r in rides])
+        # distribute initial rides on cars
+        all_cars = []
+        assignments = []
+        rides_counter = 0
+        for n in range(int(nb_cars)):
+            all_cars += [Car(rides[0], bonus_per_ride)]
+            assignments += [[1, n]]
+            rides.pop(0)
+            rides_counter += 1
 
-    # distribute initial rides on cars
-    all_cars = []
-    assignments = []
-    rides_counter = 0
-    for n in range(int(nb_cars)):
-        all_cars += [Car(rides[0], bonus_per_ride)]
-        assignments += [[1, n]]
-        rides.pop(0)
-        rides_counter += 1
+        # simulation
+        for global_time in range(nb_sim_steps):
+            if global_time % 10000 == 0:
+                print(global_time, "from ", nb_sim_steps, "complete")
+            for idx, car in enumerate(all_cars):
+                # print("status " + str(idx), car.status)
+                car_status = car.step(global_time)
 
-    # simulation
-    while global_time <= nb_sim_steps:
-        for idx, car in enumerate(all_cars):
-            car_status = car.step()
-            print("status " + str(idx), car_status)
-            if car_status == "ARRIVED!" and len(rides) != 0:
-                print("car " + str(idx) + " arrived!")
-                car.rides = rides[0]
-                rides.pop(0)
-                assignments[idx][0] += 1
-                assignments[idx].append(rides_counter)
-                car.status = "WAITING"
-        global_time += 1
+                if car_status == "ARRIVED!" and len(rides) != 0:
+                    car.rides = rides[0]
+                    rides.pop(0)
+                    assignments[idx][0] += 1
+                    assignments[idx].append(rides_counter)
+                    rides_counter += 1
+                    car.status = "WAITING"
 
-    write_assignments(dataset_file.replace("in", "out"), assignments)
+        write_assignments(dataset_file.replace("in", "out"), assignments)
 
 
 if __name__ == "__main__":
