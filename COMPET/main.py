@@ -110,8 +110,7 @@ def get_closest_available_car(all_cars, rides):
                 for j, ride in enumerate(rides):
                     dist += [distance(int(car.pos_x), int(car.pos_y), int(ride[0]), int(ride[1]))]
 
-        print( "len(dist) =", len(dist))
-
+        print("len(dist) =", len(dist))
         return all_cars[arg_car[np.argmax(dist)]]
     else:
         return "RIDES EMPTY"
