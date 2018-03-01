@@ -9,19 +9,18 @@ class Pizza:
         self.L = l
         self.H = h
         self.content = content
-        print("initialized pizza")
 
 
 def get_tom_mush_number(content):
+    flat_content = content.flatten()
     l_mush = l_tom = 0
-    for row in content:
-        for ingr in row:
-            if ingr == "T":
-                l_tom += 1
-            elif ingr == "M":
-                l_mush += 1
-            else:
-                print("ERROR: ingredient not valid!")
+    for ingr in flat_content:
+        if ingr == "T":
+            l_tom += 1
+        elif ingr == "M":
+            l_mush += 1
+        else:
+            print("ERROR: ingredient not valid!")
     return l_tom, l_mush
 
 
@@ -32,20 +31,19 @@ class Slice:
         self.ay = a[1]
         self.bx = b[0]
         self.by = b[1]
-        self.pizza = pizza
-        slice_content = pizza.content[a[0]:(b[0]+1), a[1]:(b[1]+1)]
-        self.content = slice_content
+        self.content = pizza.content[a[0]:(b[0]+1), a[1]:(b[1]+1)]
 
         self.l_tom, self.l_mush = get_tom_mush_number(self.content)
         self.h = self.content.size
 
-    def __add__(self, other):
-        ax = min(self.ax, other.ax)
-        ay = min(self.ay, other.ay)
-        bx = max(self.bx, other.bx)
-        by = max(self.by, other.by)
-        self.pizza.content = self.pizza.content[ax:(bx+1),ay:(by+1)]
-        return Slice((ax,ay), (bx,by), self.pizza)
+
+def merge_slices(r1, r2, pizza):
+    ax = min(r1.ax, r2.ax)
+    ay = min(r1.ay, r2.ay)
+    bx = max(r1.bx, r2.bx)
+    by = max(r1.by, r2.by)
+    pizza.content = pizza.content[ax:(bx+1), ay:(by+1)]
+    return Slice((ax,ay), (bx,by), pizza)
 
 
 def pizza_read(filename):
@@ -64,9 +62,9 @@ def pizza_read(filename):
 
 
 def are_neighbours(r1, r2):
-    if np.abs(r2.ax - r1.ax) == (r1.bx - r1.ax + 1) :
+    if np.abs(r2.ax - r1.ax) == (r1.bx - r1.ax + 1):
         return True
-    elif np.abs(r2.ay - r1.ay) == (r1.by -r1.ay + 1):
+    elif np.abs(r2.ay - r1.ay) == (r1.by - r1.ay + 1):
         return True
     else:
         return False
@@ -81,34 +79,37 @@ def cut(pizza, nb_iterations=10):
     regions_removed = set()
     for i, _ in enumerate(pizza.content):
         for j, _ in enumerate(pizza.content):
-            new_content = np.array([[  pizza.content[i,j]  ]])
-            new_pizza = Pizza(pizza.r, pizza.c, pizza.l, pizza.h, new_content)
+            new_content = np.reshape(pizza.content[i,j], (1,1))
+            new_pizza = Pizza(pizza.R, pizza.C, pizza.L, pizza.H, new_content)
             regions += [
                 Slice((i, j), (i, j), new_pizza)
             ]
 
-    for _ in range(nb_iterations):
-        for r1 in regions:
-            for r2 in regions:
-                if r1 != r2 and are_neighbours(r1, r2):
-                    merged = r1 + r2
-                    if merged.h < H and merged.l_mush >= L and merged.l_tom >= L:
-                        regions_removed.add(r1)
-                        regions_removed.add(r2)
-                        regions += [merged]
+    regions_one_iter = []
+    print([r.content for r in regions])
+    for r1 in regions:
+        print("content of r1: ", r1.content)
+        for r2 in regions:
+            if r1 != r2 and are_neighbours(r1, r2) and r1.content != r2.content:
+                merged = merge_slices(r1, r2, pizza)
+                regions_removed.add(r1)
+                regions_removed.add(r2)
+                regions_one_iter += [merged]
+                print("added merged!")
 
-    regions_final = [r for r in regions if r not in regions_removed]
+    regions_final = [r for r in regions_one_iter]
+    # regions_final = [r for r in regions if r not in regions_removed]
     return regions_final
 
 
 def write_result(regions_final, filename):
     with open(filename, "w") as file:
-        file.write(len(regions_final))
+        file.write(str(len(regions_final)) + "\n")
         for region in regions_final:
             file.write((str(region.ax)+ " "+
                         str(region.ay)+ " "+
                         str(region.bx)+ " "+
-                        str(region.by)+ " "))
+                        str(region.by)+ " " + "\n"))
 
 
 def main():
@@ -132,11 +133,10 @@ def main():
     assert myslice.l_mush == 3
     assert myslice.l_tom == 1
 
-    # res = Slice((0,0), (1,1), pizza) + Slice((0,0), (2,2), pizza)
-    # print(res.content)
+    res = merge_slices(Slice((0,0), (1,1), pizza), Slice((0,0), (2,2), pizza), pizza)
+    print(res.content)
     regions = cut(pizza)
     write_result(regions, "small.out")
-
 
 
 if __name__ == "__main__":
