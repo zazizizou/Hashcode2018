@@ -100,6 +100,23 @@ def write_assignments(filename, assignments):
             file.write("\n")
 
 
+def get_closest_available_car(all_cars, rides):
+    if len(rides) != 0:
+        dist = []
+        arg_car = []
+        for i, car in enumerate(all_cars):
+            if car.status == "ARRIVED!":
+                arg_car += [i]
+                for j, ride in enumerate(rides):
+                    dist += [distance(int(car.pos_x), int(car.pos_y), int(ride[0]), int(ride[1]))]
+
+        print( "len(dist) =", len(dist))
+
+        return all_cars[arg_car[np.argmax(dist)]]
+    else:
+        return "RIDES EMPTY"
+
+
 def main():
 
     data = ["a_example.in",
@@ -127,15 +144,16 @@ def main():
                 print(global_time, "from ", nb_sim_steps, "complete")
             for idx, car in enumerate(all_cars):
                 # print("status " + str(idx), car.status)
-                car_status = car.step(global_time)
+                car.step(global_time)
 
-                if car_status == "ARRIVED!" and len(rides) != 0:
-                    car.rides = rides[0]
+                closest_car = get_closest_available_car(all_cars, rides)
+                if len(rides) != 0:
+                    closest_car.rides = rides[0]
                     rides.pop(0)
                     assignments[idx][0] += 1
                     assignments[idx].append(rides_counter)
                     rides_counter += 1
-                    car.status = "WAITING"
+                    closest_car.status = "WAITING"
 
         write_assignments(dataset_file.replace("in", "out"), assignments)
 
