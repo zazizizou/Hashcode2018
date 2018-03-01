@@ -72,9 +72,6 @@ class Car:
         elif self.status == "GOING_TO_CLIENT":
             self.go_to_client()
 
-        if self.status == "ARRIVED!":
-            self.status = "WAITING"
-
         return self.status
 
 
@@ -110,8 +107,11 @@ def main():
     # simulation
     while global_time <= nb_sim_steps:
         for idx, car in enumerate(all_cars):
-            if car.step() == "ARRIVED!":
-                car(rides[0], bonus_per_ride)
+            car_status = car.step()
+            print("status " + str(idx), car_status)
+            if car_status == "ARRIVED!" and len(rides) != 0:
+                print("car " + str(idx) + " arrived!")
+                car.rides = rides[0]
                 rides.pop(0)
                 assignments[idx][0] += 1
                 assignments[idx].append(rides_counter)
