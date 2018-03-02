@@ -30,12 +30,12 @@ class Car:
         self.pos_x = 0
         self.pos_y = 0
 
-        self.ax = int(ride[0])
-        self.ay = int(ride[1])
-        self.bx = int(ride[2])
-        self.by = int(ride[3])
-        self.t_start = int(ride[4])
-        self.t_finish = int(ride[5])
+        self.ax = int(self.ride[0])
+        self.ay = int(self.ride[1])
+        self.bx = int(self.ride[2])
+        self.by = int(self.ride[3])
+        self.t_start = int(self.ride[4])
+        self.t_finish = int(self.ride[5])
         self.start_on_time_bonus = int(B)
 
         self.remaining_distance = distance(self.pos_x, self.pos_y, self.bx, self.by)
@@ -100,20 +100,16 @@ def write_assignments(filename, assignments):
             file.write("\n")
 
 
-def get_closest_available_car(all_cars, rides):
-    if len(rides) != 0:
-        dist = []
-        arg_car = []
-        for i, car in enumerate(all_cars):
-            if car.status == "ARRIVED!":
-                arg_car += [i]
-                for j, ride in enumerate(rides):
-                    dist += [distance(int(car.pos_x), int(car.pos_y), int(ride[0]), int(ride[1]))]
+def get_closest_available_car_to_ride(all_cars, rides):
+    dist = np.empty((len(all_cars), len(rides)))
+    for i, car in enumerate(all_cars):
+        if car.status == "ARRIVED!":
+            for j, ride in enumerate(rides):
+                dist[i][j] = distance(int(car.pos_x), int(car.pos_y), int(ride[0]), int(ride[1]))
 
-        print("len(dist) =", len(dist))
-        return all_cars[arg_car[np.argmax(dist)]]
-    else:
-        return "RIDES EMPTY"
+    min_idx =  np.unravel_index(np.argmin(dist, axis=None), dist.shape)
+    closest_car_idx, closest_ride_idx = min_idx[0], min_idx[1]
+    return closest_car_idx, closest_ride_idx
 
 
 def main():
@@ -139,20 +135,21 @@ def main():
 
         # simulation
         for global_time in range(nb_sim_steps):
-            if global_time % 10000 == 0:
+            if global_time % 1000 == 0:
                 print(global_time, "from ", nb_sim_steps, "complete")
             for idx, car in enumerate(all_cars):
                 # print("status " + str(idx), car.status)
                 car.step(global_time)
 
-                closest_car = get_closest_available_car(all_cars, rides)
-                if len(rides) != 0:
-                    closest_car.rides = rides[0]
-                    rides.pop(0)
-                    assignments[idx][0] += 1
-                    assignments[idx].append(rides_counter)
-                    rides_counter += 1
-                    closest_car.status = "WAITING"
+            if len(rides) != 0:
+                closest_car_idx, closest_ride_idx = get_closest_available_car_to_ride(all_cars, rides)
+                closest_car = all_cars[closest_car_idx]
+                closest_car.rides = rides[closest_ride_idx]
+                rides.pop(closest_ride_idx)
+                assignments[closest_car_idx][0] += 1
+                assignments[closest_car_idx].append(rides_counter)
+                rides_counter += 1
+                closest_car.status = "WAITING"
 
         write_assignments(dataset_file.replace("in", "out"), assignments)
 
