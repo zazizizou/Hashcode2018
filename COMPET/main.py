@@ -89,6 +89,8 @@ class Car:
         elif self.status == "GOING_TO_CLIENT":
             self.go_to_client()
 
+        # TODO: add case for missed ride
+
         return self.status
 
 
